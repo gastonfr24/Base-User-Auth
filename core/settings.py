@@ -264,3 +264,6 @@ else:
     EMAIL_HOST_USER = 'resend'
     EMAIL_HOST_PASSWORD = getenv('EMAIL_HOST_PASSWORD')
     DEFAULT_FROM_EMAIL = "test-auth <noreply@gastonfr.com>"
+
+
+USER_CREATION_PASSWORD = getenv('USER_CREATION_PASSWORD')

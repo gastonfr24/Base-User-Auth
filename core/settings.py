@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Production Settings
 SECRET_KEY = getenv('SECRET_KEY', get_random_secret_key())
-DEBUG = 'RENDER' not in os.environ
+DEBUG = getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = '127.0.0.1,localhost'.split(',')
 if not DEBUG:
@@ -190,12 +190,12 @@ AUTHENTICATION_BACKENDS = [
 # Cors Headers Settings
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
-    'http://localhost:3000',
+    'http://localhost:8000',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
-    'http://localhost:3000',
+    'http://localhost:8000',
 ]
 
 CORS_ALLOW_CREDENTIALS = True

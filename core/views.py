@@ -1,18 +1,26 @@
 from django.conf import settings
-# Create 1 superuser
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from rest_framework.permissions import AllowAny
 
 class CreateSuperUserView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, *args, **kwargs):
+        User = get_user_model()  # Obtiene el modelo de usuario personalizado
 
-        if not User.objects.filter(username='nombre_de_superusuario').exists():
-            # Utiliza config para obtener la contraseña del archivo .env
-            User.objects.create_superuser('gastonfr24', 'gastonfr24@test-auth.com', settings.USER_CREATION_PASSWORD)
+        if not User.objects.filter(email='gastonfr24@test-auth.com').exists():
+            # Utiliza el administrador para crear el superusuario
+            user = User.objects.create_user(
+                email='gastonfr24@test-auth.com',
+                password=settings.USER_CREATION_PASSWORD  # Utiliza la contraseña del archivo .env
+            )
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
 
-            Response({'message': 'usuario creado, ahora puedes usar el superuser'},status=status.HTTP_201_CREATED)
+            return Response({'message': 'Usuario creado, ahora puedes usar el superusuario'}, status=status.HTTP_201_CREATED)
         else:
-            Response({'message': 'usuario creado anteriormente'},status=status.HTTP_200_OK)
+            return Response({'message': 'Usuario creado anteriormente'}, status=status.HTTP_200_OK)

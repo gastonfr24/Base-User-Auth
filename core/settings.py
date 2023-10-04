@@ -1,23 +1,29 @@
+import os
 from os import getenv
 from pathlib import Path
 import environ
-
+import dj_database_url
 from django.core.management.utils import get_random_secret_key
 
 # Environment variables
 environ.Env.read_env()
+
+# Usar servicios de AWS, si no usa gratuitos
+USE_AWS_SERVICES = False # S3, SES, etc.
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Production Settings
 SECRET_KEY = getenv('SECRET_KEY', get_random_secret_key())
-DEBUG = getenv('DEBUG', 'False')=='True'
+DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = '127.0.0.1,localhost'.split(',')
 if not DEBUG:
     ALLOWED_HOSTS = getenv('ALLOWED_HOSTS_DEPLOY').split(',')
-
+    RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    if RENDER_EXTERNAL_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 DJANGO_APPS = [
@@ -37,7 +43,7 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'djoser',
     'social_django',
-    'django_ses',
+    #'django_ses',
     'corsheaders',
 ]
 
@@ -45,6 +51,7 @@ INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -77,12 +84,21 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if not DEBUG:
+    DATABASES = {
+        'default': dj_database_url.config(
+            # Feel free to alter this value to suit your needs.
+            default='sqlite:///db.sqlite3',
+            conn_max_age=600
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -115,11 +131,15 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / 'static'
+
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATIC_ROOT = BASE_DIR / 'static'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -224,7 +244,7 @@ if not DEBUG:
 # Email settings
 EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend'
 
-if not DEBUG:
+if USE_AWS_SERVICES:
     EMAIL_BACKEND = 'django_ses.SESBackend'
     DEFAULT_FROM_EMAIL = getenv('AWS_SES_FROM_EMAIL')
 
@@ -234,3 +254,11 @@ if not DEBUG:
     AWS_SES_REGION_ENDPOINT = f'email.{AWS_SES_REGION_NAME}.amazonaws.com'
     AWS_SES_FROM_EMAIL = getenv('AWS_SES_FROM_EMAIL')
     USE_SES_V2 = True
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.resend.com'
+    EMAIL_PORT = 587  # El puerto puede variar según el servidor SMTP
+    EMAIL_USE_TLS = True  # Usar TLS si el servidor lo requiere
+    EMAIL_HOST_USER = 'resend'
+    EMAIL_HOST_PASSWORD = getenv('EMAIL_HOST_PASSWORD')
+    DEFAULT_FROM_EMAIL = "test-auth <noreply@gastonfr.com>"

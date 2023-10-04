@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenVerifyView)
 
 from djoser.social.views import ProviderAuthView
+import os
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

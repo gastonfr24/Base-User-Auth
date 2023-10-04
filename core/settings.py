@@ -21,9 +21,11 @@ DEBUG = getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = '127.0.0.1,localhost'.split(',')
 if not DEBUG:
     ALLOWED_HOSTS = getenv('ALLOWED_HOSTS_DEPLOY').split(',')
-    RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-    if RENDER_EXTERNAL_HOSTNAME:
-        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Render Hostnames
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 DJANGO_APPS = [
